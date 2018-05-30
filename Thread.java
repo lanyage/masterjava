@@ -1,0 +1,50 @@
+JAVA线程
+1.线程创建的三种方式。
+    一,Thread t = new Thread(Runnable),这样是比较容易理解的方式。
+    二,FutureTask futureTask = new FutureTask(Callable),Thread t = new Thread(futureTask),这种方式的好处是可以获得结果和响应
+    中断。
+2.JAVA线程的优先级
+    java线程存在10个优先级,但是不建议使用优先级,应该尽量使用MAX_PRIORITY,NORMAL_PRIORITY,MIN_PRIORITY来保证程序的移植性。
+3.守护线程
+    java中存在守护线程,当除守护线程之外的所有线程结束之后,java虚拟机就会退出,然后终止守护线程，因此守护线程中的finally块不一定执行。因此
+    守护线程不能依靠finally来关闭资源。
+    setDaemon()设置守护线程,必须要在start()之前调用
+    isDaemon()查看是否是守护线程
+4.线程状态
+    NEW新建,RUNNABLE就绪,RUNNING运行,BLOCKED阻塞,WAITING等待,TIME_WAITING超时等待,TERMINATED终止
+5.线程方法
+    sleep(),让出cpu但是不释放锁
+    yield(),让出cpu
+    wait(),此方法一般在synchronized同步块里使用,释放CPU和锁
+    join(),线程合并,调用的线程需要等被调用的线程执行完,底部实现是synchronized+wait,应用与当一个任务必须等待另外一个任务的完成,比如合并
+    计算
+6.线程中断
+    可以通过设置标识为来中断正在运行的线程。
+    interrupt()中断当前线程,while(true)的线程是不能通过这个来中断的
+    isInterrupted()是否已经被中断,用来中断那些不能中断的线程
+    interrupted()显示是否被中断,并且会复位标志位
+    wait(),sleep()方法都会响应中断
+7.过时方法
+    suspend(),不安全,进入休眠但是不释放锁,容易引发死锁
+    stop(),不安全,终结线程的时候不能保证线程线程能释放资源
+8.多线程的优点和缺点
+    优点:提高资源利用率,提高响应速度
+    缺点:增加资源消耗,上下文切换开销,设计编码测试复杂度增加
+9.线程池
+    线程池主要用来重用线程,避免创建大量线程造成的开销
+10.阻塞队列BlockingQueue
+    实现:ArrayBlockingQueue,LinkedBlockingQueue基于连标,吞吐量要高于ArrayBlockingQueue,Executors.newFixedThreadPool()使用了
+    这个队列,SynchronousQueue每插入一个元素,必须等待另一个线程调用移除操作,否则添加操作一直阻塞,PriorityBlockingQueue具有优先级的无
+    限阻塞队列
+11.5种常见的线程池
+    Executors.newFixedThreadPool(),线程数少于核心线程数,新建线程执行任务,线程数等于核心线程数后,任务将被放到LinkedBlockingQueue,
+    由于阻塞队列非常大,所以基本上可以无限加,执行完任务的线程反复去队列中取任务.用于负载比较重的服务器,一般要限制线程数量为核心数+1左右。
+    Executors.newSingleThreadExecutor(),相当于是特殊的fixedThreadPool,一般用于串行的执行任务.
+    Executors.newCachedThreadPool(),底部的阻塞队列为SynchronousQueue,直接往阻塞队列存任务,如果没有空闲线程,就新建一个去处理,当处
+    理完之后如果60秒还没收到任务,那么这个线程就会被终结. 用于并发执行大量短期的小任务，或者是负载较轻的服务器。
+    Executors.newScheduledThreadPool,底部的阻塞队列为DelayedWorkQueue,封装了一个优先级队列
+12.ExecutorService.execute(Runnable),ExecutorService.submit(FutureTask(Callable)),支持一个返回结果Future
+13.关闭线程池
+    ExecutorService.shutdown();
+14.阻塞队列
+    阻塞队列其实就是生产者-消费者模型中的容器,阻塞队列可以非常好的解决notify/notifyAll等问题
