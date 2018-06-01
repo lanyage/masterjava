@@ -1,0 +1,114 @@
+//////////////////
+//////类加载//////
+/////////////////
+1.java类加载的过程？
+装载:通过全类名找到对应的.class文件,然后将.class文件的二进制流读到虚拟机,然后根据字节码在堆中生成一个java.lang.Class类的对象实例。
+链接:
+    验证:格式验证,元数据验证,字节码验证,符号验证
+    准备:初始化该类的所有的类变量,也就是static修饰的变量,但是不包括final修饰的,因为final修饰的变量编译的时候已经ok了,这里所说的初始化是
+         赋零值,实例变量是不会被初始化的。
+    解析:将所有的符号引用置换为直接引用,直接指向目标的指针或者间接指向目标的句柄
+初始化:这个阶段会将所有的变量初始化,包括实例变量和类变量。
+2.类加载器?
+类加载器的职责就是根据全类名将字节码流加载入虚拟机,然后根据字节码来生成一个Class类的实例.
+3.类加载器的分类？
+Bootstrap类加载器,这个类是用c++实现的,是虚拟机的一部分,它负责加载JAVA_HOME/jre/lib路径下的核心类库或者Xbootclasspath参数指定路径下的
+jar包,这里虚拟机是按照文件名识别加载jar包的.如rt.jar,如果你的文件名不被虚拟机识别,那么即使在lib下也不会被加载。
+ExtClassLoader,Launcher的静态内部类, 由java语言实现,负责加载JAVA_HOME/jre/lib/ext下的或者-D java.ext.dirs指定路径下的类库,开发者可
+以直接使用标准扩展器加载类。
+        String s = System.getProperty("java.ext.dirs");
+        File[] dirs;
+        if(s!=null) {
+            StringTokenizer st = new StringTokenizer(s,File.pathSeparator);
+            int count = st.countTokens();
+            dirs = new File[count];
+            for (int i = 0; i < count; i ++) {
+                dirs[i] = new File(st.nextToken());
+            }
+        }else{
+            dirs = new File[0];
+        }
+AppClassLoader系统类加载器,Launcher的静态内部类,它负责加载classpath下的或-D java.class.path指定路径下的类库,sun.misc.Launcher$AppClassLoader
+4.理解双亲委派模式？
+双亲委派加载要求除了顶层的BootstrapClassLoader之外,其余的类加载器都应该有自己的父加载器,这里的父子关系不是通过继承来实现的,而是通过组合
+来实现的复用父类的加载器的相关代码。
+原理:如果一个类加载器接收到了一个类加载器的请求,它并不会自己去加载,而是把这请求交给父类去加载,如果父加载器还有父加载器,则继续向上委托,如果
+父类成功加载,就直接返回,如果父类无法加载,才交给子类去加载,这就是双亲委派模式。
+5.双亲委派模式的优点？
+首先,可以避免类的重复加载。其次,考虑到安全因素,确保jvm核心api不会被覆盖,如果强行的去自加载一个java.lang.Integer这样是不允许的,因为java.
+lang是核心包,需要访问权限,强制加载会报java.lang.SecurityException: Prohibited package name: java.lang
+6.核心方法?
+loadClass(),该方法是ClassLoader抽象类自己实现的。该方法中的逻辑就是双亲委派模式的实现。
+首先查看缓存,如果缓存中存在该类的对象,那么就直接返回,否则交给父类,如果没有父类,则交给启动启动类加载器去加载。
+findClass(),ClassLoader是没有实现这方法的,而是抛出一个异常ClassNotFoundException。这个方法由loadClass调用。
+defineClass(),是通过byte[]解析成为虚拟机能够识别的Class实例对象,通常与findClass()一起使用。通常在用户自定义的类加载器中,会覆盖findClass
+方法并且编写加载规则,然后将字节码转换成流调用defineClass方法来生成类的对象.此时生成的Class对象还没有链接(解析).
+resolveClass(),使用该方法可以使用类的Class对象创建完成也同时被解析
+7.自己实现一个类加载器?
+package repository;
+
+import java.io.*;
+
+/**
+ * Created by lanyage on 2018/6/1.
+ */
+public class FileClassLoader extends ClassLoader {
+    private String rootDir;
+
+    public FileClassLoader(String rootDir) {
+        this.rootDir = rootDir;
+    }
+
+    /**
+     * 自定的类加载器必须自己实现findClass方法
+     */
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        byte[] classData = getClassData(name);
+        if (classData == null) {
+            throw new RuntimeException();
+        } else {
+            return defineClass(name, classData, 0, classData.length);
+        }
+    }
+
+    private byte[] getClassData(String name) {
+        String path = classNametoPath(name);
+        try {
+            InputStream is = new FileInputStream(new File(path));
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            int buffSize = 4096;
+            byte[] buff = new byte[buffSize];
+            int byteRead;
+            while ((byteRead = is.read(buff)) != -1) {
+                byteArrayOutputStream.write(buff, 0, byteRead);
+            }
+            return byteArrayOutputStream.toByteArray();
+        } catch (IOException e) {
+
+        }
+        return null;
+    }
+
+    private String classNametoPath(String name) {
+        return rootDir + File.separatorChar + name.replace('.', File.separatorChar) + ".class";
+    }
+
+    public static void main(String[] args) {
+        String rootDir = "/Users/lanyage/Desktop/";
+        FileClassLoader loader = new FileClassLoader(rootDir);
+        FileClassLoader loader1 = new FileClassLoader(rootDir);
+        try {
+            /**不同的类加载器加载的类是不一样的*/
+            Class<?> clazz = loader.findClass("test.Demoobj");
+            Class<?> clazz1 = loader1.findClass("test.Demoobj");
+            System.out.println(clazz.hashCode());
+            System.out.println(clazz1.hashCode());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+}
+8.双亲委派加载模型的破坏者-线程上下文加载类？
+比如说JDBC,JNI等等,都是三方实现的,而DriverManager在rt.jar中由BootstrapClassLoader加载,所以它必须委托其子类来加载,而DriverManager
+的load()方法,底层使用的是线程上下文类加载器来加载驱动的,新的Mysql的驱动是DriverManager.getConnection(url,username,password)
