@@ -112,3 +112,8 @@ public class FileClassLoader extends ClassLoader {
 8.双亲委派加载模型的破坏者-线程上下文加载类？
 比如说JDBC,JNI等等,都是三方实现的,而DriverManager在rt.jar中由BootstrapClassLoader加载,所以它必须委托其子类来加载,而DriverManager
 的load()方法,底层使用的是线程上下文类加载器来加载驱动的,新的Mysql的驱动是DriverManager.getConnection(url,username,password)
+9.如何防止.class文件被反编译?
+文件隔离,让客户端不能获取到.class文件
+文件加密,通过给文件加密,然后加载的时候先通过加载器解密然后再加载到虚拟机,但是这样如果加载器被反编译了,这个也容易被反编译了。
+转换为本地代码
+代码混淆,主要分为符号混淆和逻辑控制混淆
