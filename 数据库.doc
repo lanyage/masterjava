@@ -47,3 +47,78 @@ truncate和drop是ddl,执行立即生效,不能回滚,操作不触发触发器.
 第一范式:数据库表中的字段都是单一属性,不可再分。这个单一属性由基本类型组成,包括整形,实数等等。
 第二范式:属性完全依赖于主键
 第三范式:属性只依赖于主键,不依赖于其他非主属性。
+
+
+////////////////////
+/////mysql/////////
+///////////////////
+1.默认约束(mysql的默认约束是不需要加括号的)
+alter table person change name name varchar(20) not null default 'Tom';
+2.设置自增列
+create table person(
+     id int primary key auto_increment
+)charset = utf8 auto_increment=2 engine=Innodb;
+3.展示所有的全局变量?
+show global variables
+4.获取最大的id值
+select last_insert_id()
+select max(id)
+select @@identity
+5.获取表信息?
+show table status like 'person'
+6.修改表名?
+alter table person rename person2
+7.更换字段属性?
+alter table person modify name bigint
+8.更换字段名?
+alter table person change name name2
+9.添加字段名?
+alter table person add name
+10.删除字段名?
+alter table drop name
+11.删除外键约束？
+alter table person drop foreign key fk_name
+12.删除表？
+drop table is exists person, person2
+13.复制表结构?
+create table person2 like person
+14.复制表内容?
+create table person2 as select * from person;
+mysql复制表结构和表内容的时候知识简单的拷贝内容,不会复制主键,索引和自增列
+
+
+
+15.获取字段的长度
+select length(*) from person
+16.安全等于
+<=>
+17.获取最小值和最大值
+least(2,1),greatest(2,1)
+18.正则表达式?
+select 'hello' regexp '^h'
+select 'hello' regexp 'o$'
+.是任意字符,[...]是任意字符
+
+
+19.定义变量?
+set @i = 1
+20.MOD,TRUNCATE,HEX,UNHEX,CONCAT_WS()其中NULL是不回被concat的，TRIM
+21.char和varchar的区别,一个是固定长度的空间换时间,一个是时间换空间,前者对于英文字符是1字节,中文是2字节,但是后者都是2字节
+22.having这个一般和聚集函数一起使用,也就是group by
+select c_id, sum(amount) as total from deposit group by c_id having total > 500000;
+23.子查询ANY ALL IN NOT IN
+24.多列子查询
+select * from person2 where (id,name) in (select id,name from person);
+25.合并查询union,union all,前者会删除重复,后者不会，必须要列数和数据类型一致
+
+26.索引
+MYISAM和INNODB只支持B+TREE，MEMORY和HEAP支持HASH和B+TREE
+优点:增加查询速度,减少分组和排序的时间,一定程度上保证数据库表数据的完整性和一致性。
+缺点:维护索引需要消耗数据库资源,索引需要占用磁盘空间且更容易达到最大文件尺寸,索引需要维护可能会导致查询速度收到影响
+
+27.创建索引
+CREATE INDEX BkNameIdx ON book(bookname)
+CREATE UNIQUE INDEX UniqidIdx ON book(bookId)
+CREATE INDEX BkAuAndInfoIdx ON book(AUTHORS(20),info(50))
+CREATE FULLTEXT INDEX infoFTIdx ON t6(info);
+SHOW INDEX FROM t3
